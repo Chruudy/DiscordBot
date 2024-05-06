@@ -4,6 +4,12 @@ import sqlite3
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import pytz
+
+oslo_tz = pytz.timezone('Europe/Oslo')
+
+# Convert UTC time to Oslo time
+oslo_time = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(oslo_tz)
 
 SPECIFIC_CHANNEL_ID = 374135608056086528
 
@@ -44,7 +50,7 @@ async def on_message(message):
     try:
         # Update the last activity time for the user who sent the message
         with conn:
-            conn.execute('REPLACE INTO activity VALUES (?, ?)', (message.author.id, datetime.now()))
+            conn.execute('REPLACE INTO activity VALUES (?, ?)', (message.author.id, datetime.utcnow()))
 
         # Process commands after updating activity times
         await bot.process_commands(message)
@@ -56,7 +62,7 @@ async def on_reaction_add(reaction, user):
     try:
         # Update the last activity time for the user who added the reaction
         with conn:
-            conn.execute('REPLACE INTO activity VALUES (?, ?)', (user.id, datetime.now()))
+            conn.execute('REPLACE INTO activity VALUES (?, ?)', (user.id, datetime.utcnow()))
     except Exception as e:
         print(f"Error occurred: {e}")
 
@@ -65,25 +71,31 @@ async def on_reaction_remove(reaction, user):
     try:
         # Update the last activity time for the user who removed the reaction
         with conn:
-            conn.execute('REPLACE INTO activity VALUES (?, ?)', (user.id, datetime.now()))
+            conn.execute('REPLACE INTO activity VALUES (?, ?)', (user.id, datetime.utcnow()))
     except Exception as e:
         print(f"Error occurred: {e}")
 
 @bot.event
 async def on_voice_state_update(member, before, after):
     try:
-        # Check if the user joined a voice channel or switched channels
-        if (before.channel is None or (before.channel is not None and after.channel is not None and before.channel.id != after.channel.id)):
-            # The user joined a voice channel or switched channels, so update the join time in the database
+        # Check if the user joined a voice channel, switched channels, or left a channel and rejoined
+        if (before.channel is None or after.channel is None or (before.channel is not None and after.channel is not None and before.channel.id != after.channel.id)):
+            # If the user moved to the specific channel, do not update the join time
+            if after.channel is not None and after.channel.id == SPECIFIC_CHANNEL_ID:
+                return
+
+            # The user joined a voice channel, switched channels, or left a channel and rejoined, so update the join time in the database
             with conn:
-                conn.execute('REPLACE INTO voice_channel_join_times VALUES (?, ?)', (member.id, datetime.now()))
-                conn.execute('REPLACE INTO activity VALUES (?, ?)', (member.id, datetime.now()))
+                conn.execute('REPLACE INTO voice_channel_join_times VALUES (?, ?)', (member.id, datetime.utcnow()))
+                conn.execute('REPLACE INTO activity VALUES (?, ?)', (member.id, datetime.utcnow()))
     except Exception as e:
         print(f"Error occurred: {e}")
 
 @bot.command()
 async def afk(ctx, member: discord.Member = None):
     try:
+        oslo_tz = pytz.timezone('Europe/Oslo')
+
         # If no member is specified, use the author of the command
         if member is None:
             member = ctx.author
@@ -96,7 +108,7 @@ async def afk(ctx, member: discord.Member = None):
             await ctx.send(f"🔍 {member.name} hasn't been active yet.")
         else:
             # Calculate the total time of inactivity
-            inactivity_time = datetime.now() - last_activity_time[0]
+            inactivity_time = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(oslo_tz) - last_activity_time[0].replace(tzinfo=pytz.utc).astimezone(oslo_tz)
             days, remainder = divmod(inactivity_time.total_seconds(), 86400)
             hours, remainder = divmod(remainder, 3600)
             minutes, _ = divmod(remainder, 60)
@@ -111,11 +123,9 @@ async def afk(ctx, member: discord.Member = None):
             join_time = c.fetchone()
 
             if join_time is not None:
-                join_time_str = join_time[0].strftime("%H:%M:%S")
+                join_time_str = join_time[0].replace(tzinfo=pytz.utc).astimezone(oslo_tz).strftime("%H:%M:%S")
                 await ctx.send(f"🎧 {member.name} is in {voice_channel} since {join_time_str}.")
     except Exception as e:
         print(f"Error occurred: {e}")
-
-        
 
 bot.run(token)
