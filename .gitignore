@@ -14,6 +14,7 @@ ENV/
 
 # SQLite
 *.sqlite
+activity.db
 
 # Jupyter Notebook
 .ipynb_checkpoints
