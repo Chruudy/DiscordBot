@@ -1,7 +1,5 @@
-discord
-discord-ext-commands
-sqlite3
+discord.py
 datetime
-dotenv
-os
+python-dotenv
 pytz
+os
