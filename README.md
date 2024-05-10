@@ -1,6 +1,6 @@
 # Discord Bot
 
-This is a Discord bot written in Python. It uses the discord.py library to interact with Discord's API and sqlite3 for database management.
+This my first project in python where i've created a Discord bot, written in Python. It uses the discord.py library to interact with Discord's API and sqlite3 for database management.
 
 The bot tracks user activity in a Discord server, including:
 
