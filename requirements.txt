@@ -1,0 +1,7 @@
+discord
+discord-ext-commands
+sqlite3
+datetime
+dotenv
+os
+pytz

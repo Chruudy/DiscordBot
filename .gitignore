@@ -1,26 +1,7 @@
-# Python
+# .gitignore
+.env
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*~
-
-# Environments
-.env
-.venv/
-env/
-venv/
-ENV/
-
-# SQLite
+.vscode/
 *.sqlite
 activity.db
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Visual Studio Code
-.vscode/
-
-# Pytest
-.pytest_cache/
